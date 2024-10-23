@@ -20,7 +20,7 @@ class Client(models.Model):
 
 class ClientLogin(models.Model):
     client = models.ForeignKey(Client, on_delete=models.CASCADE)
-    clientUser = models.ForeignKey(CustomUser, on_delete=models.CASCADE, unique=True)
+    clientUser = models.OneToOneField(CustomUser, on_delete=models.CASCADE)
     
     def __str__(self):
         return self.client + ' | ' + self.clientUser
