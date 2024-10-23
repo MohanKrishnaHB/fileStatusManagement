@@ -1,0 +1,32 @@
+<!-- file_status_viewer_view.html -->
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>File Status Viewer</title>
+    <link href="https://maxcdn.bootstrapcdn.com/bootstrap/4.0.0/css/bootstrap.min.css" rel="stylesheet">
+</head>
+<body>
+<div class="container">
+    <h1>File Status Viewer</h1>
+    <table class="table table-striped">
+        <thead>
+        <tr>
+            <th>File</th>
+            <th>Status</th>
+            <th>Date</th>
+        </tr>
+        </thead>
+        <tbody>
+        {% for status in file_statuses %}
+        <tr>
+            <td>{{ status.file.name }}</td>
+            <td>{{ status.get_status_display }}</td>
+            <td>{{ status.date }}</td>
+        </tr>
+        {% endfor %}
+        </tbody>
+    </table>
+</div>
+</body>
+</html>
