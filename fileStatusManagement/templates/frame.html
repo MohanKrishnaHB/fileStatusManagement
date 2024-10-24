@@ -9,6 +9,42 @@
     <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/css/bootstrap.min.css" rel="stylesheet">
     <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/js/bootstrap.bundle.min.js"></script>
     <script src="https://ajax.googleapis.com/ajax/libs/jquery/3.7.1/jquery.min.js"></script>
+
+    <script>
+      function setTheme() {
+        document.getElementsByTagName("html")[0].setAttribute("data-bs-theme", localStorage.getItem("theme"));
+        setThemeIcon();
+      }
+
+      function setThemeIcon() {
+        const darkIcon = `<svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 48 48" stroke="currentColor" width="15" height="15">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="4" d="M24 4a19.918 19.918 0 00-14.562 6.09C15.266 7.138 24 14.486 24 24s-8.734 16.862-14.562 13.91A19.92 19.92 0 1024 4z" />
+                      </svg>`
+        const lightIcon = `<svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 48 48" stroke="currentColor" width="15" height="15">
+                          <circle cx="24" cy="24" r="10" stroke="currentColor" stroke-width="4"/>
+                          <line x1="24" y1="4" x2="24" y2="14" stroke="currentColor" stroke-width="4" stroke-linecap="round"/>
+                          <line x1="24" y1="34" x2="24" y2="44" stroke="currentColor" stroke-width="4" stroke-linecap="round"/>
+                          <line x1="4" y1="24" x2="14" y2="24" stroke="currentColor" stroke-width="4" stroke-linecap="round"/>
+                          <line x1="34" y1="24" x2="44" y2="24" stroke="currentColor" stroke-width="4" stroke-linecap="round"/>
+                          <line x1="8.686" y1="8.686" x2="15.314" y2="15.314" stroke="currentColor" stroke-width="4" stroke-linecap="round"/>
+                          <line x1="32.686" y1="32.686" x2="39.314" y2="39.314" stroke="currentColor" stroke-width="4" stroke-linecap="round"/>
+                          <line x1="8.686" y1="39.314" x2="15.314" y2="32.686" stroke="currentColor" stroke-width="4" stroke-linecap="round"/>
+                          <line x1="32.686" y1="15.314" x2="39.314" y2="8.686" stroke="currentColor" stroke-width="4" stroke-linecap="round"/>
+                        </svg>
+                        `
+        document.getElementById("theme-icon").innerHTML = localStorage.getItem("theme") == 'dark' ? darkIcon : lightIcon;
+      }
+
+      function toggelTheme() {
+        localStorage.setItem("theme", localStorage.getItem("theme") == 'dark' ? 'light' : 'dark')
+        setTheme();
+      }
+
+      window.onload = function() {
+        setTheme();
+      };
+
+    </script>
 </head>
 
 <body class="">
@@ -25,6 +61,13 @@
             <ul class="navbar-nav">
                 <li class="nav-item">
                   <a class="nav-link" href="{% url 'client:logout' %}">Log-out</a>
+                </li>
+                <li class="nav-item">
+                  <button class="nav-link" onclick="toggelTheme()">
+                    <span class="w-50" id="theme-icon">
+                      
+                    </span>
+                  </button>
                 </li>
             </ul>
           </div>
