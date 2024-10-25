@@ -12,6 +12,13 @@ class CustomUser(AbstractUser):
     def __str__(self):
         return self.email
 
+    def isChamp(self):
+        return self.role == 'champ'
+    def isClient(self):
+        return self.role == 'client'
+    def isLead(self):
+        return self.role == 'lead'
+
 class Client(models.Model):
     name = models.CharField(max_length=100, unique=True)
     
