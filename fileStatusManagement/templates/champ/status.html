@@ -1,0 +1,85 @@
+{% extends "../frame.html" %}
+
+{% block title %}Status | Champ{% endblock %}
+
+{% block tabs %}
+{% include "../components/header.html" with status="active" %}
+{% endblock %}
+
+{% block content %}
+
+<div class="row justify-content-center py-3">
+    <div class="col-11 col-lg-8 col-md-8 col-sm-10 col-xs-10">
+        <div>
+            <h3 class="text-center h3">Update File Status</h3>
+        </div>
+        <div class="py-3">
+            <div class="pb-3">
+                <div class="row justify-content-around">
+                    <div class="col">
+                        <div class="form-floating">
+                            <select class="form-select" id="client" name="client">
+                                {% for client in clients %}
+                                <option value="{{ client.id }}">{{ client.name }}</option>
+                                {% endfor %} 
+                            </select>
+                            <label for="client" class="form-label">Client</label>
+                        </div>
+                    </div>
+                    <div class="col">
+                        <div class="form-floating">
+                            <select class="form-select" id="customer" name="customer">
+                                {% for customer in customers %}
+                                <option value="{{ customer.id }}">{{ customer.name }}</option>
+                                {% endfor %}
+                            </select>
+                            <label for="customer" class="form-label">Customer</label>
+                        </div>
+                    </div>
+                    <div class="col">
+                        {{testClient}}
+                        <div class="form-floating">
+                            <input type="date" class="form-control" id="date" placeholder="Select Date" name="date" value="{{date}}">
+                            <label for="date">Date</label>
+                          </div>
+                    </div>
+                </div>
+            </div>
+            <div class="pb-3">
+                <div class="table-responsive">
+                    <table class="table table-bordered">
+                        <thead>
+                          <tr>
+                            <th>File Name</th>
+                            <th>Status</th>
+                            <th>Comments</th>
+                          </tr>
+                        </thead>
+                        <tbody>
+                            {% for file in files %}
+                            <tr>
+                                <td>{{ file.name }}</td>
+                                <td>
+                                    <select class="form-select">
+                                        {% for s in status %}
+                                        <option value="{{ s.id }}">{{ s.title }}</option>
+                                        {% endfor %}
+                                    </select>
+                                </td>
+                                <td>
+                                    <input type="text" class="form-control" placeholder="Comments" name="comments">
+                                </td>
+                            </tr>
+                            {% endfor %} 
+                        </tbody>
+                      </table>
+                </div>
+            </div>
+            <div class="w-100">
+                <button type="button" class="btn btn-primary btn-block w-100">Save</button>
+            </div>
+        </div>
+    </div>
+</div>
+
+{% endblock %}
