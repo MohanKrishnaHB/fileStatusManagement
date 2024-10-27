@@ -3,9 +3,23 @@ from django.contrib.auth.decorators import login_required
 from django.contrib.auth import logout
 from client.models import Client, CustomUser, ClientLogin
 from .models import Customer, File, FileStatus, Status
-from datetime import date
+from datetime import date, timedelta
 from django.http import JsonResponse
 import json
+
+def getStatusesCountForDashboard(fileStatusObject, customers):
+    
+    processedFileStatus = fileStatusObject.filter(status__in=Status.objects.filter(color='success'))
+    customersWithAllFielsProcessed = processedFileStatus.values('customer').distinct()
+    NotProcessedCustomers = fileStatusObject.exclude(status__in=Status.objects.filter(color='success')).values('customer').distinct().exclude(customer__in=[i['customer'] for i in customersWithAllFielsProcessed])
+    
+    response = {
+        'allfiles': fileStatusObject.count(),
+        'processedFiles': processedFileStatus.count(),
+        'numberOfCustomers': customers.count(),
+        'allProcessedCustomers': customersWithAllFielsProcessed.count() - NotProcessedCustomers.count(),
+    }
+    return response
 
 @login_required
 def dashboard(request):
@@ -13,7 +27,25 @@ def dashboard(request):
     if user.isChamp():
         return render(request, 'champ/dashboard.html')
     elif user.isClient():
-        return render(request, 'client/dashboard.html')
+        clientId = ClientLogin.objects.get(clientUser=user.id).client
+        customers = Customer.objects.filter(client=clientId)
+        currentClientFileStatuses = FileStatus.objects.filter(customer__in=customers)
+        
+        today = date.today()
+        start_of_week = today - timedelta(days=6)
+        end_of_week = today
+
+        response = {
+            'day': {
+                'date': today.strftime("%Y-%m-%d"),
+                'metric': getStatusesCountForDashboard(currentClientFileStatuses.filter(date=today.strftime("%Y-%m-%d")), customers)
+            },
+            'week': {
+                'week': start_of_week.strftime("%Y-%m-%d") + ' to ' + end_of_week.strftime("%Y-%m-%d"),
+                'metric': getStatusesCountForDashboard(currentClientFileStatuses.filter(date__range=(start_of_week.strftime("%Y-%m-%d"), end_of_week.strftime("%Y-%m-%d"))), customers)
+            }
+        }
+        return render(request, 'client/dashboard.html', response)
     else:
         return redirect('/admin')
 

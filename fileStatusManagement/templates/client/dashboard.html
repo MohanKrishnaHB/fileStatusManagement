@@ -14,7 +14,7 @@
             <div class="col-6 border-end">
                 <div class="text-center pb-3">
                     <span class="h3 pb-2">Day</span> <br/>
-                    <span class="text-secondary small">27-10-2024</span>
+                    <span class="text-secondary small">{{day.date}}</span>
                 </div>
                 <div class="row">
                     <div class="col-12 col-lg-6 col-md-6 col-sm-12 col-xs-12">
@@ -22,7 +22,7 @@
                             <div class="card-body">
                                 <h6 class="small text-secondary text-center">No Of Files Processed</h6>
                                 <div class="text-center">
-                                    <span class="h1 text-success">5</span><span class="text-secondary">/10</span>
+                                    <span class="h1 text-success">{{day.metric.processedFiles}}</span><span class="text-secondary">/{{day.metric.allfiles}}</span>
                                 </div>
                             </div>
                         </div>
@@ -32,7 +32,7 @@
                             <div class="card-body">
                                 <h6 class="small text-secondary text-center">No Of Customers will all Files Processed</h6>
                                 <div class="text-center">
-                                    <span class="h1 text-success">5</span><span class="text-secondary">/10</span>
+                                    <span class="h1 text-success">{{day.metric.allProcessedCustomers}}</span><span class="text-secondary">/{{day.metric.numberOfCustomers}}</span>
                                 </div>
                             </div>
                         </div>
@@ -42,7 +42,7 @@
             <div class="col-6">
                 <div class="text-center pb-3">
                     <span class="h3 pb-2">Week</span> <br/>
-                    <span class="text-secondary small">20-10-2024 to 27-10-2024</span>
+                    <span class="text-secondary small">{{week.week}}</span>
                 </div>
                 <div class="row">
                     <div class="col-12 col-lg-6 col-md-6 col-sm-12 col-xs-12">
@@ -50,7 +50,7 @@
                             <div class="card-body">
                                 <h6 class="small text-secondary text-center">No Of Files Processed</h6>
                                 <div class="text-center">
-                                    <span class="h1 text-success">5</span><span class="text-secondary">/10</span>
+                                    <span class="h1 text-success">{{week.metric.processedFiles}}</span><span class="text-secondary">/{{week.metric.allfiles}}</span>
                                 </div>
                             </div>
                         </div>
@@ -60,7 +60,7 @@
                             <div class="card-body">
                                 <h6 class="small text-secondary text-center">No Of Customers will all Files Processed</h6>
                                 <div class="text-center">
-                                    <span class="h1 text-success">5</span><span class="text-secondary">/10</span>
+                                    <span class="h1 text-success">{{week.metric.allProcessedCustomers}}</span><span class="text-secondary">/{{week.metric.numberOfCustomers}}</span>
                                 </div>
                             </div>
                         </div>
