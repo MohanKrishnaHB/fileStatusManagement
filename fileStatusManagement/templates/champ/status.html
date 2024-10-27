@@ -10,6 +10,22 @@
 
 <script>
     $(document).ready(function () {
+        function showToast(message, isSuccess) {
+        const toast = new bootstrap.Toast($('#toastMessage'), {
+            delay: 3000
+        });
+        const $toastBody = $('#toastBody');
+        
+        $toastBody.text(message);
+        if (isSuccess) {
+            $('#toastMessage').addClass('bg-success text-white').removeClass('bg-danger text-white');
+        } else {
+            $('#toastMessage').addClass('bg-danger text-white').removeClass('bg-success text-white');
+        }
+        
+        toast.show();
+        }
+        
         function getCookie(name) {
             const value = `; ${document.cookie}`;
             const parts = value.split(`; ${name}=`);
@@ -140,7 +156,6 @@
                 date: $('input#date').val()
             };
 
-            console.log(dataToSend);
             $.ajax({
                 url: '/upsert-file-status/',
                 method: 'POST',
@@ -151,9 +166,11 @@
                 data: JSON.stringify(dataToSend),
                 success: function (response) {
                     console.log('Data sent successfully:', response);
+                    showToast('Status updated successfully!', true);
                 },
                 error: function (error) {
                     console.error('Error sending data:', error);
+                    showToast('Failed to update status!', false);
                 }
             });
         }
@@ -166,6 +183,16 @@
         getAndDisplayCustomers();
     });
 </script>
+
+
+<div class="position-fixed top-0 start-50 translate-middle-x p-3" style="z-index: 1050">
+<div id="toastMessage" class="toast align-items-center" role="alert" aria-live="assertive" aria-atomic="true">
+    <div class="d-flex">
+    <div id="toastBody" class="toast-body"></div>
+    <button type="button" class="btn-close me-2 m-auto" data-bs-dismiss="toast" aria-label="Close"></button>
+    </div>
+</div>
+</div>
 
 <div class="row justify-content-center py-3">
     <div class="col-11 col-lg-10 col-md-10 col-sm-10 col-xs-10">

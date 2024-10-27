@@ -1,7 +1,7 @@
 from django.shortcuts import render, redirect
 from django.contrib.auth.decorators import login_required
 from django.contrib.auth import logout
-from client.models import Client, CustomUser
+from client.models import Client, CustomUser, ClientLogin
 from .models import Customer, File, FileStatus, Status
 from datetime import date
 from django.http import JsonResponse
@@ -27,10 +27,17 @@ def status(request):
             'date': date.today().strftime("%Y-%m-%d")
         }
         return render(request, 'champ/status.html', retrunObj)
-    elif user.isClient():
-        return render(request, 'client/status.html')
+    elif user.isClient() and ClientLogin.objects.filter(clientUser=user.id):
+        clientId = ClientLogin.objects.get(clientUser=user.id).client
+        customers = Customer.objects.filter(client=clientId)
+        retrunObj = {
+            'customers': customers,
+            'date': date.today().strftime("%Y-%m-%d")
+        }
+        return render(request, 'client/status.html', retrunObj)
     else:
-        return redirect('/admin')
+        logout(request)
+        return redirect('/')
 
 @login_required
 def get_customers(request):
@@ -40,10 +47,13 @@ def get_customers(request):
         customers = Customer.objects.filter(client=clientId).values('id', 'name', 'customerId')
         customerList = list(customers)
         return JsonResponse(customerList, safe=False)
-    elif user.isClient():
-        return JsonResponse({}, safe=False)
+    elif user.isClient() and ClientLogin.objects.filter(clientUser=user.id):
+        clientId = ClientLogin.objects.get(clientUser=user.id).client
+        customers = Customer.objects.filter(client=clientId).values('id', 'name', 'customerId')
+        customerList = list(customers)
+        return JsonResponse(customerList, safe=False)
     else:
-        return redirect('/admin')
+        return JsonResponse({'error': 'Unauthorized'}, status=401)
 
 @login_required
 def get_file_status(request):
@@ -73,11 +83,32 @@ def get_file_status(request):
             'status': list(status)
         }
         return JsonResponse(response, safe=False)
-    elif user.isClient():
-        return JsonResponse({}, safe=False)
+    elif user.isClient() and ClientLogin.objects.filter(clientUser=user.id):
+        clientId = ClientLogin.objects.get(clientUser=user.id).client
+        customerId = request.GET.get('customer_id')
+        date = request.GET.get('date')
+        if not (clientId and customerId and date):
+            response = {
+                'files': [],
+                'status': []
+            }
+            return JsonResponse(response, safe=False)
+        status = Status.objects.values()
+        fileStatus = FileStatus.objects.filter(customer=customerId, date=date).values('id', 'file', 'status', 'comments')
+        temp = [{
+            'file_id': f['id'],
+            'file_name': File.objects.get(id=f['file']).name,
+            'status': f['status'],
+            'comments': f['comments'],
+        } for f in fileStatus]
+        fileStatusList = list(temp)
+        response = {
+            'files': fileStatusList,
+            'status': list(status)
+        }
+        return JsonResponse(response, safe=False)
     else:
-        return redirect('/admin')
-
+        return JsonResponse({'error': 'Unauthorized'}, status=401)
 
 @login_required
 def upsert_file_status(request):
@@ -125,4 +156,4 @@ def upsert_file_status(request):
         logout(request)
         return redirect('/users/login')
     else:
-        return redirect('/admin')
+        return JsonResponse({'error': 'Unauthorized'}, status=401)
