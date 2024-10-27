@@ -3,10 +3,10 @@ from client.models import Client, CustomUser
 
 class Status(models.Model):
     COLORS_CHOICES = [
-        ('green', 'Green'),
-        ('blue', 'Blue'),
-        ('yellow', 'Yellow'),
-        ('red', 'Red'),
+        ('success', 'success'),
+        ('primary', 'primary'),
+        ('warning', 'warning'),
+        ('danger', 'danger'),
     ]
     title = models.CharField(max_length=500, unique=True)
     color = models.CharField(max_length=20, choices=COLORS_CHOICES)
@@ -37,3 +37,6 @@ class FileStatus(models.Model):
     date = models.DateField()
     drafterBy = models.ForeignKey(CustomUser, on_delete=models.CASCADE)
     isDraft = models.BooleanField(default=True)
+    
+    class Meta:
+        unique_together = ('customer', 'file', 'date')

@@ -30,4 +30,4 @@ class ClientLogin(models.Model):
     clientUser = models.OneToOneField(CustomUser, on_delete=models.CASCADE)
     
     def __str__(self):
-        return self.client + ' | ' + self.clientUser
+        return self.client.name + ' | ' + self.clientUser.username

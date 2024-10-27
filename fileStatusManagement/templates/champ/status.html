@@ -8,8 +8,156 @@
 
 {% block content %}
 
+<script>
+    $(document).ready(function () {
+        function getCookie(name) {
+            const value = `; ${document.cookie}`;
+            const parts = value.split(`; ${name}=`);
+            if (parts.length === 2) return parts.pop().split(';').shift();
+        }
+
+        $('select#client').change(function () {
+            const clientId = $(this).val();
+            $.ajax({
+                url: '/get-customers/',
+                data: { client_id: clientId },
+                success: function (data) {
+                    const $customerSelect = $('select#customer');
+                    $customerSelect.empty();  // Clear current options
+                    $.each(data, function (index, customer) {
+                        $customerSelect.append($('<option>', {
+                            value: customer.id,
+                            text: customer.name + "-" + customer.customerId
+                        }));
+                    });
+                    getFileStatusAndUpdateTable();
+                },
+                error: function (error) {
+                    console.error('Error fetching customers:', error);
+                }
+            });
+        });
+
+        function refreshTable(statuses, files) {
+            const $fileTableBody = $('#file-table-body');
+            $fileTableBody.empty();  // Clear current options
+            files.forEach(file => {
+                const $row = $(`<tr data-file-id="${file.file_id}" class="${statuses.filter((item) => file.status == item.id)[0].color}">">`);
+                const $fileNameCell = $('<td>').text(file.file_name);
+
+                const $commentsCell = $('<td>');
+                const $commentsInput = $('<input type="text" class="form-control" placeholder="Comments">').attr('value', file.comments);
+                $commentsCell.append($commentsInput);
+
+                const $statusCell = $('<td>');
+                const $statusSelect = $(`<select class="form-select text-${statuses.filter((item) => file.status == item.id)[0].color}">`).attr('name', 'status');
+                statuses.forEach(status => {
+                    const $option = $(`<option class="text-${status.color}">`).attr('value', status.id).text(status.title);
+                    if (status.id === file.status) {
+                        $option.attr('selected', 'selected');
+                    }
+                    $statusSelect.append($option);
+                });
+                $statusCell.append($statusSelect);
+
+                $row.append($fileNameCell, $statusCell, $commentsCell);
+                $fileTableBody.append($row);
+            });
+        }
+
+        function getFileStatusAndUpdateTable() {
+
+            $("#fileStatusTableContainer").hide();
+            $("#tablePlaceholderLoader").show();
+            $("#tableNoDataFoundImage").hide();
+
+            const clientId = $('select#client').val();
+            const customerId = $('select#customer').val();
+            const date = $('input#date').val();
+            $.ajax({
+                url: '/get-file-status/',
+                data: { client_id: clientId, customer_id: customerId, date: date },
+                success: function (data) {
+
+                    const files = data.files;
+                    const statuses = data.status;
+                    refreshTable(statuses, files);
+                    $("#fileStatusTableContainer").show();
+                    $("#tablePlaceholderLoader").hide();
+                    $("#tableNoDataFoundImage").hide();
+                },
+                error: function (error) {
+                    $("#fileStatusTableContainer").hide();
+                    $("#tablePlaceholderLoader").hide();
+                    $("#tableNoDataFoundImage").show();
+                    console.error('Error fetching customers:', error);
+                }
+            });
+        }
+
+        $('select#customer').change(function () {
+            getFileStatusAndUpdateTable();
+        });
+
+        $('input#date').change(function () {
+            getFileStatusAndUpdateTable();
+        });
+
+        function gatherTableData() {
+            let tableData = [];
+
+            $('#file-table-body tr').each(function () {
+                let fileId = $(this).data('file-id');
+                let status = $(this).find('select[name="status"]').val();
+                let comments = $(this).find('input[type="text"]').val();
+
+                tableData.push({
+                    file_id: fileId,
+                    status: status,
+                    comments: comments
+                });
+            });
+
+            return tableData;
+        }
+
+        function sendTableData() {
+            let dataToSend = {
+                files: gatherTableData(),
+                clientId: $('select#client').val(),
+                customerId: $('select#customer').val(),
+                date: $('input#date').val()
+            };
+
+            console.log(dataToSend);
+            $.ajax({
+                url: '/upsert-file-status/',
+                method: 'POST',
+                contentType: 'application/json',
+                headers: {
+                    'X-CSRFToken': getCookie('csrftoken')
+                },
+                data: JSON.stringify(dataToSend),
+                success: function (response) {
+                    console.log('Data sent successfully:', response);
+                },
+                error: function (error) {
+                    console.error('Error sending data:', error);
+                }
+            });
+        }
+
+        $('#saveFileStatusButton').click(function (event) {
+            event.preventDefault();
+            sendTableData();
+        });
+
+        getFileStatusAndUpdateTable();
+    });
+</script>
+
 <div class="row justify-content-center py-3">
-    <div class="col-11 col-lg-8 col-md-8 col-sm-10 col-xs-10">
+    <div class="col-11 col-lg-10 col-md-10 col-sm-10 col-xs-10">
         <div>
             <h3 class="text-center h3">Update File Status</h3>
         </div>
@@ -17,20 +165,20 @@
             <div class="pb-3">
                 <div class="row justify-content-around">
                     <div class="col">
-                        <div class="form-floating">
+                        <div class="form-floating border border-primary rounded">
                             <select class="form-select" id="client" name="client">
                                 {% for client in clients %}
                                 <option value="{{ client.id }}">{{ client.name }}</option>
-                                {% endfor %} 
+                                {% endfor %}
                             </select>
                             <label for="client" class="form-label">Client</label>
                         </div>
                     </div>
                     <div class="col">
-                        <div class="form-floating">
+                        <div class="form-floating border border-primary rounded">
                             <select class="form-select" id="customer" name="customer">
                                 {% for customer in customers %}
-                                <option value="{{ customer.id }}">{{ customer.name }}</option>
+                                <option value="{{ customer.id }}">{{ customer.name }}-{{ customer.customerId }}</option>
                                 {% endfor %}
                             </select>
                             <label for="customer" class="form-label">Customer</label>
@@ -38,45 +186,38 @@
                     </div>
                     <div class="col">
                         {{testClient}}
-                        <div class="form-floating">
-                            <input type="date" class="form-control" id="date" placeholder="Select Date" name="date" value="{{date}}">
+                        <div class="form-floating border border-primary rounded">
+                            <input type="date" class="form-control" id="date" placeholder="Select Date" name="date"
+                                value="{{date}}">
                             <label for="date">Date</label>
-                          </div>
+                        </div>
                     </div>
                 </div>
             </div>
-            <div class="pb-3">
+            <div class="pb-3" id="fileStatusTableContainer" style="display: none;">
                 <div class="table-responsive">
-                    <table class="table table-bordered">
+                    <table class="table">
                         <thead>
-                          <tr>
-                            <th>File Name</th>
-                            <th>Status</th>
-                            <th>Comments</th>
-                          </tr>
-                        </thead>
-                        <tbody>
-                            {% for file in files %}
                             <tr>
-                                <td>{{ file.name }}</td>
-                                <td>
-                                    <select class="form-select">
-                                        {% for s in status %}
-                                        <option value="{{ s.id }}">{{ s.title }}</option>
-                                        {% endfor %}
-                                    </select>
-                                </td>
-                                <td>
-                                    <input type="text" class="form-control" placeholder="Comments" name="comments">
-                                </td>
+                                <th>File Name</th>
+                                <th>Status</th>
+                                <th>Comments</th>
                             </tr>
-                            {% endfor %} 
+                        </thead>
+                        <tbody id="file-table-body">
+                            
                         </tbody>
-                      </table>
+                    </table>
+                </div>
+                <div class="w-100">
+                    <button type="button" class="btn btn-primary btn-block w-100" id="saveFileStatusButton">Save</button>
                 </div>
             </div>
-            <div class="w-100">
-                <button type="button" class="btn btn-primary btn-block w-100">Save</button>
+            <div class="w-100 text-center" id="tablePlaceholderLoader" style="display: none;">
+                <div class="spinner-border"></div>
+            </div>
+            <div class="text-center h3 text-danger pt-3" id="tableNoDataFoundImage" style="display: none">
+                No Files Found for this client
             </div>
         </div>
     </div>
