@@ -16,8 +16,8 @@
             if (parts.length === 2) return parts.pop().split(';').shift();
         }
 
-        $('select#client').change(function () {
-            const clientId = $(this).val();
+        function getAndDisplayCustomers() {
+            const clientId = $('select#client').val();
             $.ajax({
                 url: '/get-customers/',
                 data: { client_id: clientId },
@@ -36,6 +36,10 @@
                     console.error('Error fetching customers:', error);
                 }
             });
+        }
+
+        $('select#client').change(function () {
+            getAndDisplayCustomers();
         });
 
         function refreshTable(statuses, files) {
@@ -81,10 +85,17 @@
 
                     const files = data.files;
                     const statuses = data.status;
-                    refreshTable(statuses, files);
-                    $("#fileStatusTableContainer").show();
-                    $("#tablePlaceholderLoader").hide();
-                    $("#tableNoDataFoundImage").hide();
+                    if(files.length > 0 && statuses.length > 0) {
+                        refreshTable(statuses, files);
+                        $("#fileStatusTableContainer").show();
+                        $("#tablePlaceholderLoader").hide();
+                        $("#tableNoDataFoundImage").hide();
+                    }
+                    else {
+                        $("#fileStatusTableContainer").hide();
+                        $("#tablePlaceholderLoader").hide();
+                        $("#tableNoDataFoundImage").show();
+                    }
                 },
                 error: function (error) {
                     $("#fileStatusTableContainer").hide();
@@ -152,7 +163,7 @@
             sendTableData();
         });
 
-        getFileStatusAndUpdateTable();
+        getAndDisplayCustomers();
     });
 </script>
 
@@ -177,15 +188,12 @@
                     <div class="col">
                         <div class="form-floating border border-primary rounded">
                             <select class="form-select" id="customer" name="customer">
-                                {% for customer in customers %}
-                                <option value="{{ customer.id }}">{{ customer.name }}-{{ customer.customerId }}</option>
-                                {% endfor %}
+                                
                             </select>
                             <label for="customer" class="form-label">Customer</label>
                         </div>
                     </div>
                     <div class="col">
-                        {{testClient}}
                         <div class="form-floating border border-primary rounded">
                             <input type="date" class="form-control" id="date" placeholder="Select Date" name="date"
                                 value="{{date}}">

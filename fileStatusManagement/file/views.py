@@ -22,10 +22,8 @@ def status(request):
     user = request.user
     if user.isChamp():
         clients = Client.objects.all()
-        customers = Customer.objects.filter(client=clients[0].id).values()
         retrunObj = {
             'clients': clients,
-            'customers': customers,
             'date': date.today().strftime("%Y-%m-%d")
         }
         return render(request, 'champ/status.html', retrunObj)
@@ -54,6 +52,12 @@ def get_file_status(request):
         clientId = request.GET.get('client_id')
         customerId = request.GET.get('customer_id')
         date = request.GET.get('date')
+        if not (clientId and customerId and date):
+            response = {
+                'files': [],
+                'status': []
+            }
+            return JsonResponse(response, safe=False)
         files = File.objects.filter(client=clientId).values('id', 'name')
         status = Status.objects.values()
         fileStatus = FileStatus.objects.filter(customer=customerId, date=date).values('id', 'file', 'status', 'comments')
