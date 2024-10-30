@@ -10,22 +10,37 @@
 
 <script>
     $(document).ready(function () {
-        
-        function refreshTable(statuses, files) {
-            const $fileTableBody = $('#file-table-body');
-            $fileTableBody.empty();  // Clear current options
-            files.forEach(file => {
-                const $row = $(`<tr data-file-id="${file.file_id}" class="${statuses.filter((item) => file.status == item.id)[0].color}">">`);
-                const $fileNameCell = $('<td>').text(file.file_name);
+        function refreshTable(data) {
+            const $headerDates = $('#header-dates');
+            const $headerStatusComments = $('#header-status-comments');
+            const $tableBody = $('#file-table-body');
+            $headerDates.empty();
+            $headerStatusComments.empty();
+            $tableBody.empty();
+            // Populate header dates
+            $headerDates.append(`<th rowspan="2">Customer Name and Display Id</th>
+                                <th rowspan="2">File Name</th>`);
+            data.dates.forEach(date => {
+                $headerDates.append(`<th colspan="2">${date}</th>`);
+                $headerStatusComments.append(`<th>Status</th><th>Comments</th>`);
+            });
 
-                const $commentsCell = $('<td>').text(file.comments);
-
-                const $statusCell = $('<td>');
-                const $statusSelect = $(`<span class="text-${statuses.filter((item) => file.status == item.id)[0].color}">`).text(statuses.filter((item) => file.status == item.id)[0].title);
-                $statusCell.append($statusSelect);
-
-                $row.append($fileNameCell, $statusCell, $commentsCell);
-                $fileTableBody.append($row);
+            // Populate table body
+            data.customers.forEach(customer => {
+                const customerNameId = `${customer.customer_name} - ${customer.customer_display_id}`;
+                customer.files.forEach((file, fileIndex) => {
+                    const fileRow = `
+                        <tr>
+                            ${fileIndex === 0 ? `<td rowspan="${customer.files.length}">${customerNameId}</td>` : `<td rowspan="${customer.files.length}" style="display: none;">${customerNameId}</td>`}
+                            <td>${file.file_name}</td>
+                            ${file.statuses.map(status => `
+                                <td><span class="text-${status.status_color}">${status.status_title}</span></td>
+                                <td>${status.comments}</td>
+                            `).join('')}
+                        </tr>
+                    `;
+                    $tableBody.append(fileRow);
+                });
             });
         }
 
@@ -35,26 +50,16 @@
             $("#tablePlaceholderLoader").show();
             $("#tableNoDataFoundImage").hide();
 
-            const customerId = $('select#customer').val();
-            const date = $('input#date').val();
+            const startDate = $('input#startDate').val();
+            const endDate = $('input#endDate').val();
             $.ajax({
                 url: '/get-file-status/',
-                data: { customer_id: customerId, date: date },
+                data: { start_date: startDate, end_date: endDate },
                 success: function (data) {
-
-                    const files = data.files;
-                    const statuses = data.status;
-                    if(files.length > 0 && statuses.length > 0) {
-                        refreshTable(statuses, files);
-                        $("#fileStatusTableContainer").show();
-                        $("#tablePlaceholderLoader").hide();
-                        $("#tableNoDataFoundImage").hide();
-                    }
-                    else {
-                        $("#fileStatusTableContainer").hide();
-                        $("#tablePlaceholderLoader").hide();
-                        $("#tableNoDataFoundImage").show();
-                    }
+                    refreshTable(data);
+                    $("#fileStatusTableContainer").show();
+                    $("#tablePlaceholderLoader").hide();
+                    $("#tableNoDataFoundImage").hide();
                 },
                 error: function (error) {
                     $("#fileStatusTableContainer").hide();
@@ -65,58 +70,86 @@
             });
         }
 
-        $('select#customer').change(function () {
+        $('input#startDate').change(function () {
+            getFileStatusAndUpdateTable();
+        });
+        $('input#endDate').change(function () {
             getFileStatusAndUpdateTable();
         });
 
-        $('input#date').change(function () {
-            getFileStatusAndUpdateTable();
+        $('#search').on('input', function () {
+            var searchValue = $(this).val().toLowerCase();
+            $('#file-table-body tr').each(function () {
+                var row = $(this);
+                var found = false;
+
+                // Check each cell in the row
+                row.find('td, span').each(function () {
+                    var cell = $(this);
+                    if (cell.text().toLowerCase().indexOf(searchValue) !== -1) {
+                        found = true;
+                        return false;  // break out of the .each loop
+                    }
+                });
+
+                // Show or hide the row based on the found flag
+                if (found) {
+                    row.show();
+                    // Ensure all relevant rows are displayed if a match is found for a customer
+                    if (row.attr('rowspan')) {
+                        row.nextUntil('tr[rowspan]').show();
+                    } else if (row.prev().attr('rowspan')) {
+                        row.prev().show();
+                    }
+                } else {
+                    row.hide();
+                }
+            });
         });
 
         getFileStatusAndUpdateTable();
+
     });
 </script>
 
 <div class="row justify-content-center py-3">
-    <div class="col-11 col-lg-10 col-md-10 col-sm-10 col-xs-10">
+    <div class="col-12">
         <div>
             <h3 class="text-center h3">File Status</h3>
         </div>
         <div class="py-3">
-            <div class="pb-3">
+            <div class="pb-1">
                 <div class="row justify-content-around">
-                    <div class="col">
+                    <div class="col mb-2">
                         <div class="form-floating border border-primary rounded">
-                            <select class="form-select" id="customer" name="customer">
-                                {% for customer in customers %}
-                                <option value="{{ customer.id }}">{{ customer.name }}-{{ customer.customerId }}</option>
-                                {% endfor %}
-                            </select>
-                            <label for="customer" class="form-label">Customer</label>
+                            <input type="date" class="form-control" id="startDate" placeholder="Select Start Date"
+                                name="startDate" value="{{date}}">
+                            <label for="startDate">Start Date</label>
                         </div>
                     </div>
-                    <div class="col">
+                    <div class="col mb-2">
                         <div class="form-floating border border-primary rounded">
-                            <input type="date" class="form-control" id="date" placeholder="Select Date" name="date"
-                                value="{{date}}">
-                            <label for="date">Date</label>
+                            <input type="date" class="form-control" id="endDate" placeholder="Select End Date"
+                                name="endDate" value="{{date}}">
+                            <label for="endDate">End Date</label>
                         </div>
                     </div>
                 </div>
             </div>
-            <div class="pb-3" id="fileStatusTableContainer" style="display: none;">
+            <div class="mb-3">
+                <input class="form-control" id="search" type="text" placeholder="Search..">
+            </div>
+            <div class="pb-3" id="fileStatusTableContainer" style="display: block;">
                 <div class="table-responsive">
-                    <table class="table">
+                    <table class="table table-bordered">
                         <thead>
-                            <tr>
-                                <th>File Name</th>
-                                <th>Status</th>
-                                <th>Comments</th>
+                            <tr id="header-dates">
+                                <!-- <th rowspan="2">Customer Name and Display Id</th>
+                                <th rowspan="2">File Name</th> -->
                             </tr>
+                            <tr id="header-status-comments"></tr>
                         </thead>
-                        <tbody id="file-table-body">
-                            
-                        </tbody>
+                        <tbody id="file-table-body"></tbody>
                     </table>
                 </div>
             </div>

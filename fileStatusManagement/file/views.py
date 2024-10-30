@@ -6,20 +6,7 @@ from .models import Customer, File, FileStatus, Status
 from datetime import date, timedelta
 from django.http import JsonResponse
 import json
-
-def getStatusesCountForDashboard(fileStatusObject, customers):
-    
-    processedFileStatus = fileStatusObject.filter(status__in=Status.objects.filter(color='success'))
-    customersWithAllFielsProcessed = processedFileStatus.values('customer').distinct()
-    NotProcessedCustomers = fileStatusObject.exclude(status__in=Status.objects.filter(color='success')).values('customer').distinct().exclude(customer__in=[i['customer'] for i in customersWithAllFielsProcessed])
-    
-    response = {
-        'allfiles': fileStatusObject.count(),
-        'processedFiles': processedFileStatus.count(),
-        'numberOfCustomers': customers.count(),
-        'allProcessedCustomers': customersWithAllFielsProcessed.count() - NotProcessedCustomers.count(),
-    }
-    return response
+from .helper import get_statuses_count_for_dashboard, get_structured_file_statuses
 
 @login_required
 def dashboard(request):
@@ -38,11 +25,11 @@ def dashboard(request):
         response = {
             'day': {
                 'date': today.strftime("%Y-%m-%d"),
-                'metric': getStatusesCountForDashboard(currentClientFileStatuses.filter(date=today.strftime("%Y-%m-%d")), customers)
+                'metric': get_statuses_count_for_dashboard(currentClientFileStatuses.filter(date=today.strftime("%Y-%m-%d")), customers)
             },
             'week': {
                 'week': start_of_week.strftime("%Y-%m-%d") + ' to ' + end_of_week.strftime("%Y-%m-%d"),
-                'metric': getStatusesCountForDashboard(currentClientFileStatuses.filter(date__range=(start_of_week.strftime("%Y-%m-%d"), end_of_week.strftime("%Y-%m-%d"))), customers)
+                'metric': get_statuses_count_for_dashboard(currentClientFileStatuses.filter(date__range=(start_of_week.strftime("%Y-%m-%d"), end_of_week.strftime("%Y-%m-%d"))), customers)
             }
         }
         return render(request, 'client/dashboard.html', response)
@@ -117,28 +104,9 @@ def get_file_status(request):
         return JsonResponse(response, safe=False)
     elif user.isClient() and ClientLogin.objects.filter(clientUser=user.id):
         clientId = ClientLogin.objects.get(clientUser=user.id).client
-        customerId = request.GET.get('customer_id')
-        date = request.GET.get('date')
-        if not (clientId and customerId and date):
-            response = {
-                'files': [],
-                'status': []
-            }
-            return JsonResponse(response, safe=False)
-        status = Status.objects.values()
-        fileStatus = FileStatus.objects.filter(customer=customerId, date=date).values('id', 'file', 'status', 'comments')
-        temp = [{
-            'file_id': f['id'],
-            'file_name': File.objects.get(id=f['file']).name,
-            'status': f['status'],
-            'comments': f['comments'],
-        } for f in fileStatus]
-        fileStatusList = list(temp)
-        response = {
-            'files': fileStatusList,
-            'status': list(status)
-        }
-        return JsonResponse(response, safe=False)
+        startDate = request.GET.get('start_date')
+        endDate = request.GET.get('end_date')
+        return get_structured_file_statuses(clientId, startDate, endDate)
     else:
         return JsonResponse({'error': 'Unauthorized'}, status=401)
 
