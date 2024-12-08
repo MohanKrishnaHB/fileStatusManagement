@@ -10,6 +10,8 @@
 
 <script>
     $(document).ready(function () {
+        var loadedData;
+
         function refreshTable(data) {
             const $headerDates = $('#header-dates');
             const $headerStatusComments = $('#header-status-comments');
@@ -30,11 +32,11 @@
                 const customerNameId = `${customer.customer_name} - ${customer.customer_display_id}`;
                 customer.files.forEach((file, fileIndex) => {
                     const fileRow = `
-                        <tr>
-                            ${fileIndex === 0 ? `<td rowspan="${customer.files.length}">${customerNameId}</td>` : `<td rowspan="${customer.files.length}" style="display: none;">${customerNameId}</td>`}
+                        <tr data-cust-id="${customerNameId}" data-no-of-files="${customer.files.length}">
+                            ${fileIndex === 0 ? `<td rowspan="${customer.files.length}" data-first-row="true" data-cust-id="${customerNameId}">${customerNameId}</td>` : `<td style="display: none;" data-first-row="false" data-cust-id="${customerNameId}">${customerNameId}</td>`}
                             <td>${file.file_name}</td>
                             ${file.statuses.map(status => `
-                                <td><span class="text-${status.status_color}">${status.status_title}</span></td>
+                                <td class="text-${status.status_color}">${status.status_title}</td>
                                 <td>${status.comments}</td>
                             `).join('')}
                         </tr>
@@ -56,6 +58,7 @@
                 url: '/get-file-status/',
                 data: { start_date: startDate, end_date: endDate },
                 success: function (data) {
+                    loadedData = data;
                     refreshTable(data);
                     $("#fileStatusTableContainer").show();
                     $("#tablePlaceholderLoader").hide();
@@ -77,34 +80,74 @@
             getFileStatusAndUpdateTable();
         });
 
+        function searchInJson(value, data) {
+    const lowerValue = value.toLowerCase();
+
+    return {
+      dates: data.dates,
+      customers: data.customers.filter(customer => {
+        const customerMatches = customer.customer_name.toLowerCase().includes(lowerValue) ||
+          customer.customer_display_id.toLowerCase().includes(lowerValue);
+
+        if (customerMatches) {
+          return true;
+        }
+
+        const matchedFiles = customer.files.filter(file => {
+          const fileMatches = file.file_name.toLowerCase().includes(lowerValue);
+          const matchedStatuses = file.statuses.some(status => 
+            status.status_title.toLowerCase().includes(lowerValue) ||
+            status.status_color.toLowerCase().includes(lowerValue) ||
+            status.date.toLowerCase().includes(lowerValue) ||
+            status.comments.toLowerCase().includes(lowerValue)
+          );
+
+          return fileMatches || matchedStatuses;
+        });
+
+        return matchedFiles.length > 0;
+      }).map(customer => {
+        const customerMatches = customer.customer_name.toLowerCase().includes(lowerValue) ||
+          customer.customer_display_id.toLowerCase().includes(lowerValue);
+
+        if (customerMatches) {
+          return {
+            ...customer,
+            files: customer.files.map(file => ({
+              ...file,
+              statuses: file.statuses
+            }))
+          };
+        }
+
+        const matchedFiles = customer.files.filter(file => {
+          const fileMatches = file.file_name.toLowerCase().includes(lowerValue);
+          const matchedStatuses = file.statuses.some(status => 
+            status.status_title.toLowerCase().includes(lowerValue) ||
+            status.status_color.toLowerCase().includes(lowerValue) ||
+            status.date.toLowerCase().includes(lowerValue) ||
+            status.comments.toLowerCase().includes(lowerValue)
+          );
+
+          return fileMatches || matchedStatuses;
+        }).map(file => ({
+          ...file,
+          statuses: file.statuses
+        }));
+
+        return {
+          ...customer,
+          files: matchedFiles
+        };
+      })
+    };
+  }
+
         $('#search').on('input', function () {
             var searchValue = $(this).val().toLowerCase();
-            $('#file-table-body tr').each(function () {
-                var row = $(this);
-                var found = false;
-
-                // Check each cell in the row
-                row.find('td, span').each(function () {
-                    var cell = $(this);
-                    if (cell.text().toLowerCase().indexOf(searchValue) !== -1) {
-                        found = true;
-                        return false;  // break out of the .each loop
-                    }
-                });
-
-                // Show or hide the row based on the found flag
-                if (found) {
-                    row.show();
-                    // Ensure all relevant rows are displayed if a match is found for a customer
-                    if (row.attr('rowspan')) {
-                        row.nextUntil('tr[rowspan]').show();
-                    } else if (row.prev().attr('rowspan')) {
-                        row.prev().show();
-                    }
-                } else {
-                    row.hide();
-                }
-            });
+            var filteredData = searchInJson(searchValue, loadedData);
+            // console.log(filteredData);
+            refreshTable(filteredData);
         });
 
         getFileStatusAndUpdateTable();
