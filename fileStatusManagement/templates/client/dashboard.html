@@ -1,0 +1,74 @@
+{% extends "../frame.html" %}
+
+{% block title %}Dashboard{% endblock %}
+
+{% block tabs %}
+    {% include "../components/header.html" with dashboard="active" %}
+{% endblock %}
+
+{% block content %}
+
+<div class="row justify-content-center py-4">
+    <div class="col-12">
+        <div class="row justify-content-center">
+            <div class="col-6 border-end">
+                <div class="text-center pb-3">
+                    <span class="h3 pb-2">Day</span> <br/>
+                    <span class="text-secondary small">{{day.date}}</span>
+                </div>
+                <div class="row">
+                    <div class="col-12 col-lg-6 col-md-6 col-sm-12 col-xs-12">
+                        <div class="p-3 rounded rounded-3 shadow h-100 d-flex align-items-center">
+                            <div class="card-body">
+                                <h6 class="small text-secondary text-center">No Of Files Processed</h6>
+                                <div class="text-center">
+                                    <span class="h1 text-success">{{day.metric.processedFiles}}</span><span class="text-secondary">/{{day.metric.allfiles}}</span>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="col-12 col-lg-6 col-md-6 col-sm-12 col-xs-12">
+                        <div class="p-3 rounded rounded-3 shadow h-100 d-flex align-items-center">
+                            <div class="card-body">
+                                <h6 class="small text-secondary text-center">No Of Customers will all Files Processed</h6>
+                                <div class="text-center">
+                                    <span class="h1 text-success">{{day.metric.allProcessedCustomers}}</span><span class="text-secondary">/{{day.metric.numberOfCustomers}}</span>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+            <div class="col-6">
+                <div class="text-center pb-3">
+                    <span class="h3 pb-2">Week</span> <br/>
+                    <span class="text-secondary small">{{week.week}}</span>
+                </div>
+                <div class="row">
+                    <div class="col-12 col-lg-6 col-md-6 col-sm-12 col-xs-12">
+                        <div class="p-3 rounded rounded-3 shadow h-100 d-flex align-items-center">
+                            <div class="card-body">
+                                <h6 class="small text-secondary text-center">No Of Files Processed</h6>
+                                <div class="text-center">
+                                    <span class="h1 text-success">{{week.metric.processedFiles}}</span><span class="text-secondary">/{{week.metric.allfiles}}</span>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="col-12 col-lg-6 col-md-6 col-sm-12 col-xs-12">
+                        <div class="p-3 rounded rounded-3 shadow h-100 d-flex align-items-center">
+                            <div class="card-body">
+                                <h6 class="small text-secondary text-center">No Of Customers will all Files Processed</h6>
+                                <div class="text-center">
+                                    <span class="h1 text-success">{{week.metric.allProcessedCustomers}}</span><span class="text-secondary">/{{week.metric.numberOfCustomers}}</span>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+{% endblock %}

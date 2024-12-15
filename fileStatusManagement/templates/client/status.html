@@ -1,0 +1,209 @@
+{% extends "../frame.html" %}
+
+{% block title %}Status{% endblock %}
+
+{% block tabs %}
+{% include "../components/header.html" with status="active" %}
+{% endblock %}
+
+{% block content %}
+
+<script>
+    $(document).ready(function () {
+        var loadedData;
+
+        function refreshTable(data) {
+            const $headerDates = $('#header-dates');
+            const $headerStatusComments = $('#header-status-comments');
+            const $tableBody = $('#file-table-body');
+            $headerDates.empty();
+            $headerStatusComments.empty();
+            $tableBody.empty();
+            // Populate header dates
+            $headerDates.append(`<th rowspan="2">Customer Name and Display Id</th>
+                                <th rowspan="2">File Name</th>`);
+            data.dates.forEach(date => {
+                $headerDates.append(`<th colspan="2">${date}</th>`);
+                $headerStatusComments.append(`<th>Status</th><th>Comments</th>`);
+            });
+
+            // Populate table body
+            data.customers.forEach(customer => {
+                const customerNameId = `${customer.customer_name} - ${customer.customer_display_id}`;
+                customer.files.forEach((file, fileIndex) => {
+                    const fileRow = `
+                        <tr data-cust-id="${customerNameId}" data-no-of-files="${customer.files.length}">
+                            ${fileIndex === 0 ? `<td rowspan="${customer.files.length}" data-first-row="true" data-cust-id="${customerNameId}">${customerNameId}</td>` : `<td style="display: none;" data-first-row="false" data-cust-id="${customerNameId}">${customerNameId}</td>`}
+                            <td>${file.file_name}</td>
+                            ${file.statuses.map(status => `
+                                <td class="text-${status.status_color}">${status.status_title}</td>
+                                <td>${status.comments}</td>
+                            `).join('')}
+                        </tr>
+                    `;
+                    $tableBody.append(fileRow);
+                });
+            });
+        }
+
+        function getFileStatusAndUpdateTable() {
+
+            $("#fileStatusTableContainer").hide();
+            $("#tablePlaceholderLoader").show();
+            $("#tableNoDataFoundImage").hide();
+
+            const startDate = $('input#startDate').val();
+            const endDate = $('input#endDate').val();
+            $.ajax({
+                url: '/get-file-status/',
+                data: { start_date: startDate, end_date: endDate },
+                success: function (data) {
+                    loadedData = data;
+                    refreshTable(data);
+                    $("#fileStatusTableContainer").show();
+                    $("#tablePlaceholderLoader").hide();
+                    $("#tableNoDataFoundImage").hide();
+                },
+                error: function (error) {
+                    $("#fileStatusTableContainer").hide();
+                    $("#tablePlaceholderLoader").hide();
+                    $("#tableNoDataFoundImage").show();
+                    console.error('Error fetching customers:', error);
+                }
+            });
+        }
+
+        $('input#startDate').change(function () {
+            getFileStatusAndUpdateTable();
+        });
+        $('input#endDate').change(function () {
+            getFileStatusAndUpdateTable();
+        });
+
+        function searchInJson(value, data) {
+    const lowerValue = value.toLowerCase();
+
+    return {
+      dates: data.dates,
+      customers: data.customers.filter(customer => {
+        const customerMatches = customer.customer_name.toLowerCase().includes(lowerValue) ||
+          customer.customer_display_id.toLowerCase().includes(lowerValue);
+
+        if (customerMatches) {
+          return true;
+        }
+
+        const matchedFiles = customer.files.filter(file => {
+          const fileMatches = file.file_name.toLowerCase().includes(lowerValue);
+          const matchedStatuses = file.statuses.some(status => 
+            status.status_title.toLowerCase().includes(lowerValue) ||
+            status.status_color.toLowerCase().includes(lowerValue) ||
+            status.date.toLowerCase().includes(lowerValue) ||
+            status.comments.toLowerCase().includes(lowerValue)
+          );
+
+          return fileMatches || matchedStatuses;
+        });
+
+        return matchedFiles.length > 0;
+      }).map(customer => {
+        const customerMatches = customer.customer_name.toLowerCase().includes(lowerValue) ||
+          customer.customer_display_id.toLowerCase().includes(lowerValue);
+
+        if (customerMatches) {
+          return {
+            ...customer,
+            files: customer.files.map(file => ({
+              ...file,
+              statuses: file.statuses
+            }))
+          };
+        }
+
+        const matchedFiles = customer.files.filter(file => {
+          const fileMatches = file.file_name.toLowerCase().includes(lowerValue);
+          const matchedStatuses = file.statuses.some(status => 
+            status.status_title.toLowerCase().includes(lowerValue) ||
+            status.status_color.toLowerCase().includes(lowerValue) ||
+            status.date.toLowerCase().includes(lowerValue) ||
+            status.comments.toLowerCase().includes(lowerValue)
+          );
+
+          return fileMatches || matchedStatuses;
+        }).map(file => ({
+          ...file,
+          statuses: file.statuses
+        }));
+
+        return {
+          ...customer,
+          files: matchedFiles
+        };
+      })
+    };
+  }
+
+        $('#search').on('input', function () {
+            var searchValue = $(this).val().toLowerCase();
+            var filteredData = searchInJson(searchValue, loadedData);
+            // console.log(filteredData);
+            refreshTable(filteredData);
+        });
+
+        getFileStatusAndUpdateTable();
+
+    });
+</script>
+
+<div class="row justify-content-center py-3">
+    <div class="col-12">
+        <div>
+            <h3 class="text-center h3">File Status</h3>
+        </div>
+        <div class="py-3">
+            <div class="pb-1">
+                <div class="row justify-content-around">
+                    <div class="col mb-2">
+                        <div class="form-floating border border-primary rounded">
+                            <input type="date" class="form-control" id="startDate" placeholder="Select Start Date"
+                                name="startDate" value="{{date}}">
+                            <label for="startDate">Start Date</label>
+                        </div>
+                    </div>
+                    <div class="col mb-2">
+                        <div class="form-floating border border-primary rounded">
+                            <input type="date" class="form-control" id="endDate" placeholder="Select End Date"
+                                name="endDate" value="{{date}}">
+                            <label for="endDate">End Date</label>
+                        </div>
+                    </div>
+                </div>
+            </div>
+            <div class="mb-3">
+                <input class="form-control" id="search" type="text" placeholder="Search..">
+            </div>
+            <div class="pb-3" id="fileStatusTableContainer" style="display: block;">
+                <div class="table-responsive">
+                    <table class="table table-bordered">
+                        <thead>
+                            <tr id="header-dates">
+                                <!-- <th rowspan="2">Customer Name and Display Id</th>
+                                <th rowspan="2">File Name</th> -->
+                            </tr>
+                            <tr id="header-status-comments"></tr>
+                        </thead>
+                        <tbody id="file-table-body"></tbody>
+                    </table>
+                </div>
+            </div>
+            <div class="w-100 text-center" id="tablePlaceholderLoader" style="display: none;">
+                <div class="spinner-border"></div>
+            </div>
+            <div class="text-center h3 text-secondary pt-3" id="tableNoDataFoundImage" style="display: none">
+                Status Not updated yet
+            </div>
+        </div>
+    </div>
+</div>
+
+{% endblock %}
