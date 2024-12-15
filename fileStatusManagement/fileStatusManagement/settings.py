@@ -86,8 +86,8 @@ DATABASES = {
     'default': {
         'ENGINE': 'mssql',
         'NAME': 'fileManagementSYstem',
-        'USER': os.environ.get('DATABASE_USER'),
-        'PASSWORD': os.environ.get('DATABASE_PASSWORD'),
+        'USER': 'mohan',
+        'PASSWORD': 'DigitalDi!123',
         'HOST': 'ddifilemanagement.database.windows.net',
         'PORT': '1433',
         'OPTIONS': {
