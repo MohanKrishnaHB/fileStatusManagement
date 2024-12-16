@@ -34,3 +34,9 @@ DATABASES = {
         'PASSWORD': parameters['password']
     }
 }
+
+AUTH_USER_MODEL = 'client.CustomUser'
+
+LOGIN_URL = 'client:login'
+LOGIN_REDIRECT_URL = 'file:dashboard'
+LOGOUT_REDIRECT_URL = 'client:login'
