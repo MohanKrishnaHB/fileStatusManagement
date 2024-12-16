@@ -83,20 +83,6 @@ DATABASES = {
     }
 }
 
-# DATABASES = {
-#     'default': {
-#         'ENGINE': 'mssql',
-#         'NAME': 'fileManagementSYstem',
-#         'USER': 'mohan',
-#         'PASSWORD': 'DigitalDi!123',
-#         'HOST': 'ddifilemanagement.database.windows.net',
-#         'PORT': '1433',
-#         'OPTIONS': {
-#             'driver': 'ODBC Driver 17 for SQL Server',
-#         },
-#     }
-# }
-
 
 
 # Password validation
