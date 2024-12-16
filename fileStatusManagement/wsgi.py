@@ -11,6 +11,8 @@ import os
 
 from django.core.wsgi import get_wsgi_application
 
-os.environ.setdefault('DJANGO_SETTINGS_MODULE', 'fileStatusManagement.settings')
+settings_module = 'fileStatusManagement.settings' if 'WEBSITE_HOSTNAME' in os.environ else 'fileStatusManagement.prodsettings'
+
+os.environ.setdefault('DJANGO_SETTINGS_MODULE', settings_module)
 
 application = get_wsgi_application()
