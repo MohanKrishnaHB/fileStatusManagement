@@ -7,7 +7,7 @@ class CustomUser(AbstractUser):
         ('lead', 'Lead'),
         ('client', 'Client'),
     ]
-    role = models.CharField(max_length=20, choices=ROLES_CHOICES)
+    role = models.CharField(max_length=20, choices=ROLES_CHOICES, default='lead')
 
     def __str__(self):
         return self.email
