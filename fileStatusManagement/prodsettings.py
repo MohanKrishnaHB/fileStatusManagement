@@ -27,7 +27,11 @@ DATABASES = {
         'HOST': os.environ['AZURE_MYSQL_HOST'],
         'NAME': os.environ['AZURE_MYSQL_NAME'],
         'USER': os.environ['AZURE_MYSQL_USER'],
-        'PASSWORD': os.environ['AZURE_MYSQL_PASSWORD']
+        'PASSWORD': os.environ['AZURE_MYSQL_PASSWORD'],
+        'PORT': '3306',
+        'OPTIONS': {
+            'ssl': {'ca': 'DigiCertGlobalRootCA.crt.pem'}
+        }
     }
 }
 
